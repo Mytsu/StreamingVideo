@@ -14,6 +14,7 @@ class Cliente(object):
         self.udp.bind(orig) # requerindo a amarracao da porta de recebimento
 
     def requerimento_servidor(self):
+        ba = bytearray()
         while True:
             msg = "arquivos lista" # envio uma menssagem de conexao com o servidor para ele informar os arquivos
             self.udp.sendto(msg.encode("utf-8"), self.dest)
@@ -28,7 +29,16 @@ class Cliente(object):
             response = 'passar'.encode("utf-8")
             arq = open("novo", "wb")
             while response != b'':
-                response = self.udp.recv(2048)
+                response, porto_transferencia = self.udp.recv(2048)
+                head = ba.join([response])
+                # head 0 - 4 -> 0 - 2 : Id msg e 2 - 4 : tamanho da msg
+                contmsg = head[0:2]
+                tamanho = head[2:4]
+                msg = b'\x01'
+                msg = ba.join([msg, contmsg])
+                self.udp.sendto(msg, porto_transferencia)
+
+
                 arq.write(response)
             break
 

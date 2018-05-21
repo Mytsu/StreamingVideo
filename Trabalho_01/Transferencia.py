@@ -1,6 +1,7 @@
 from threading import Thread
 import socket
 import os
+import select
 
 
 class Transferencia(Thread):
@@ -41,15 +42,22 @@ class Transferencia(Thread):
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         contamsg = 0
-        tamanho_msg = b'\x00\x01'
+        tamanho_msg = int(1).to_bytes(1, 'big')
         while int.from_bytes(tamanho_msg, 'big') != 0:
-            msg = msg + self.arq.read(self.buffleitura)  # leitura de n bits do arquivo
+            msg = self.arq.read(self.buffleitura)  # leitura de n bits do arquivo
             tamanho_msg = len(msg).to_bytes(2, 'big')
             contamsg = contamsg.to_bytes(2, 'big')
             head = b''.join([contamsg, tamanho_msg])
             msg = b''.join([head, msg])
             udp.sendto(msg, self.dest)
-
+            sock = udp.getsockname()
+            ready_to_read, ready_to_write, in_error = select.select(
+                    [sock[1]],
+                    [sock[1]],
+                    []
+            )
+            if ready_to_read != None :
+                print('oi')
         udp.close()
 
 
