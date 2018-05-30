@@ -1,6 +1,8 @@
 import socket
 import os
 from ControleEnvio import ControleEnvio
+from UnidadeControle import UnidadeControle
+from threading import Thread, Lock
 
 
 class Servidor(object):
@@ -25,7 +27,13 @@ class Servidor(object):
         print('Endereco servidor :' + str(orig))
         # diretorio onde estara os videos no servidor
         self.diretorio_arquivos = (os.path.dirname(os.path.realpath(__file__))) + diretorio
-        self.controle = ControleEnvio()
+        self.build_thread_control()
+        self.controle = ControleEnvio(self.unidadeControle)
+
+    def build_thread_control(self):
+        self.lock = Lock()
+        self.unidadeControle = UnidadeControle(self.lock)
+        self.unidadeControle.run()
 
     def build_threads(self):
         """
@@ -65,6 +73,7 @@ class Servidor(object):
                 arquivo = open(self.diretorio + arquivos[int(prm[1])], 'rb')
                 for th in self.poolThreads:
                     if not th.isAlive():
+                        self.unidadeControle.add_buffer(cliente)
                         th.dest = cliente
                         th.arquivo = arquivo
                         th.run()

@@ -2,9 +2,10 @@ import math
 
 
 class ControleEnvio(object):
-    def __init__(self):
+    def __init__(self, unidadecontrole):
         self.buffersize = 104857600  # 100MB
         self.windowsize = 8388608  # 8MB
+        self.unidadecontrole = unidadecontrole
 
     def sendmsg(self, msg, cliente, udp):
         """
@@ -20,13 +21,16 @@ class ControleEnvio(object):
         cont = 0
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
-            udp.sendto(self.adiciona_cabecalho(mensagem, cont % numero_grande), cliente)
+            pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande)
+            self.unidadecontrole.add_pacote(pacote)
+            udp.sendto(pacote, cliente)
             cont += 1
-        udp.sendto(
-            self.adiciona_cabecalho(
-                'encerramento_lista'.encode('utf-8'), cont % numero_grande)
-            , cliente
+
+        pacote = self.adiciona_cabecalho(
+                'encerramento_lista'.encode('utf-8'), cont % numero_grande
         )
+        self.unidadecontrole.add_pacote(pacote)
+        udp.sendto(pacote, cliente)
 
     def fragmenta(self, msg):
         # em bytes
