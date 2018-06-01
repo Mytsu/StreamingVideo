@@ -9,9 +9,10 @@ class Cliente(object):
         orig = (self.meuip, 0)
         self.udp.bind(orig)
         self.meuporto = self.udp.getsockname()
-        self.servidor = (ipservidor, 50000)
+        self.servidor = ('127.0.1.1', 50000)
         self.controle = ControleEnvio()
         self.udp.settimeout(1)
+        self.data = ''
 
     def requisita_servidor(self):
         """
@@ -19,7 +20,7 @@ class Cliente(object):
         :return:
         """
         mensagem = input('> ')
-        self.controle.sendmsg(mensagem, self.servidor, self.udp)
+        self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
         self.recebermsg()
 
     def recebermsg(self):
@@ -30,10 +31,10 @@ class Cliente(object):
         mensagem = ''
         try:
             mensagem = self.udp.recv(1024)
-        except TimeoutError:
+        except: # time out except
             print('Timeout erro')
             self.requisita_servidor()
-
+        print(mensagem)
         self.checkmsg(mensagem)
 
     def desmonta_pacote(self, msg):
@@ -42,9 +43,7 @@ class Cliente(object):
         :param msg:
         :return:
         """
-        ba = bytearray(msg)
-        print(msg)
-        return ba[:8], ba[8:]
+        return msg[:8], msg[8:]
 
     def checkmsg(self, msg):
         """
@@ -53,8 +52,30 @@ class Cliente(object):
         :return:
         """
         head, data = self.desmonta_pacote(msg)
+        tipo = int().from_bytes(head[7:8], 'big')
+        numero_seq = int().from_bytes(head[:4], 'big')
+        windowsize = int().from_bytes(head[4:7], 'big')
         # check header
-        print(data.decode('utf-8'))
+        self.tratamento(data, tipo)
+
+        return data
+
+    def tratamento(self, data, tipo):
+        """
+
+        :param data:
+        :param tipo:
+        :return:
+        """
+        if tipo == 0:
+            data = data.decode('utf-8')
+            if 'encerramento_lista' not in data:
+                self.data = self.data + data
+                self.recebermsg()
+            else:
+                arquivos = self.data.split('#')
+                for arquivo in arquivos:
+                    print(arquivo)
 
 
 if __name__ == '__main__':

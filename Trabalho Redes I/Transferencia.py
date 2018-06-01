@@ -21,7 +21,7 @@ class Transferencia(Thread):
         self.unidadecontrole.add_porto(udp)
         conteudo = self.leitura_arquivo()
         while conteudo != b'':
-            self.controle.sendmsg(conteudo, self.dest, udp)
+            self.controle.sendmsg(conteudo, self.dest, udp, tipomsg=1)
 
     def leitura_arquivo(self):
         """

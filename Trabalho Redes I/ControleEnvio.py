@@ -2,12 +2,12 @@ import math
 
 
 class ControleEnvio(object):
-    def __init__(self, unidadecontrole):
+    def __init__(self, unidadecontrole = None):
         self.buffersize = 104857600  # 100MB
         self.windowsize = 8388608  # 8MB
         self.unidadecontrole = unidadecontrole
 
-    def sendmsg(self, msg, cliente, udp):
+    def sendmsg(self, msg, cliente, udp, tipomsg, usounidadecontrole=False):
         """
         formata a msg para envio
         :param msg: msg a ser enviada
@@ -21,15 +21,18 @@ class ControleEnvio(object):
         cont = 0
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
-            pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande)
-            self.unidadecontrole.add_pacote(pacote)
+            pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg)
+
+            if usounidadecontrole:
+                self.unidadecontrole.add_pacote(cliente, pacote)
             udp.sendto(pacote, cliente)
             cont += 1
 
         pacote = self.adiciona_cabecalho(
-                'encerramento_lista'.encode('utf-8'), cont % numero_grande
+                'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg
         )
-        self.unidadecontrole.add_pacote(pacote)
+        if usounidadecontrole:
+            self.unidadecontrole.add_pacote(cliente, pacote)
         udp.sendto(pacote, cliente)
 
     def fragmenta(self, msg):
@@ -48,12 +51,12 @@ class ControleEnvio(object):
 
         return lista_envio
 
-    def adiciona_cabecalho(self, msg, numero_sequencia):
+    def adiciona_cabecalho(self, msg, numero_sequencia, tipomsg):
         """
 
         :param numero_sequencia:
         :return:
         """
         head = numero_sequencia.to_bytes(4, 'big')
-        cabecalho = head+self.windowsize.to_bytes(4, 'big')
+        cabecalho = head+self.windowsize.to_bytes(3, 'big') + tipomsg.to_bytes(1, 'big')
         return cabecalho + msg

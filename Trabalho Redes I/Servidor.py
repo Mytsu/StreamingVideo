@@ -3,7 +3,7 @@ import os
 from ControleEnvio import ControleEnvio
 from UnidadeControle import UnidadeControle
 from threading import Thread, Lock
-
+from Transferencia import Transferencia
 
 class Servidor(object):
     def __init__(self, meuip=socket.gethostbyname(socket.gethostname()), diretorio='/streamer', arquivolog= 'meulog.log'):
@@ -29,27 +29,31 @@ class Servidor(object):
         self.diretorio_arquivos = (os.path.dirname(os.path.realpath(__file__))) + diretorio
         self.build_thread_control()
         self.controle = ControleEnvio(self.unidadeControle)
+        self.build_threads()
 
     def build_thread_control(self):
         self.lock = Lock()
         self.unidadeControle = UnidadeControle(self.lock)
-        self.unidadeControle.run()
+        self.unidadeControle.start()
+
 
     def build_threads(self):
         """
-
+        Criando a pool de threads do servidor
         :return:
         """
-        pass
+        self.poolThreads = [Transferencia(self.unidadeControle) for i in range(10)]
 
     def wait(self):
         """
         A espera de uma requisicao do cliente
         :return:
         """
+        print('Servidor a espera de requisicao')
         while True:
             # menssagem do cliente e seu especifico (ip, porto) para transferencia de dados
             msg, cliente = self.udp.recvfrom(1024)
+            print('Login: ' + str(cliente))
             self.conteudo.append('Login: ' + str(cliente))
             self.accept(msg, cliente)
 
@@ -62,10 +66,8 @@ class Servidor(object):
         data = self.checkmsg(msg)
         arquivos = [os.path.join(nome) for nome in os.listdir(self.diretorio_arquivos)]
         # informando os videos presentes para transferencia
-
         if 'arquivos lista' in data:
-            print(data)
-            self.controle.sendmsg('#'.join(arquivos), cliente, self.udp)
+            self.controle.sendmsg('#'.join(arquivos), cliente, self.udp, tipomsg=0)
 
         elif 'get' in data:
             prm = data.split(" ")
@@ -80,11 +82,13 @@ class Servidor(object):
                         break
 
             except ValueError:
-                self.controle.sendmsg('erro index invalido', cliente, self.udp)
+                self.controle.sendmsg('erro index invalido', cliente, self.udp, tipomsg=0)
             except IndexError:
-                self.controle.sendmsg('erro index invalido', cliente, self.udp)
+                self.controle.sendmsg('erro index invalido', cliente, self.udp, tipomsg=0)
             except FileNotFoundError:
-                self.controle.sendmsg('erro arquivo nao encontrado', cliente, self.udp)
+                self.controle.sendmsg('erro arquivo nao encontrado', cliente, self.udp, tipomsg=0)
+
+        self.wait()
 
     def checkmsg(self, msg):
         """
@@ -95,7 +99,7 @@ class Servidor(object):
         ba = bytearray(msg)
         head = ba[:8]
         # retorno somente da msg
-        print(msg)
+
         return msg[8:].decode('utf-8')
 
 

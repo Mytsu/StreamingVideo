@@ -1,6 +1,7 @@
 from threading import Thread
 import select
 
+
 class UnidadeControle(Thread):
     (
         PACOTE,
@@ -18,11 +19,14 @@ class UnidadeControle(Thread):
 
         :return:
         """
-        self.lock.acquire()
-        readable, writable, exceptional = select.select(self.listaPortos, [], [])
-        self.lock.release()
-        for udp in readable:
-            udp.recvfrom(1024)
+
+        while True:
+            # print('oi')
+            self.lock.acquire()
+            readable, writable, exceptional = select.select(self.listaPortos, [], [])
+            self.lock.release()
+            for udp in readable:
+               udp.recvfrom(1024)
 
     def add_buffer(self, cliente):
         self.lock.acquire()
