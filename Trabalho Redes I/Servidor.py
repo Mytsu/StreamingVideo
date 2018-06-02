@@ -41,7 +41,7 @@ class Servidor(object):
         Criando a pool de threads do servidor
         :return:
         """
-        self.poolThreads = [Transferencia(self.unidadeControle) for i in range(10)]
+        self.poolThreads = [Transferencia(self.unidadeControle, Lock()) for i in range(10)]
 
     def wait(self):
         """
@@ -74,7 +74,7 @@ class Servidor(object):
                 arquivo = open(self.diretorio + arquivos[int(prm[1])], 'rb')
                 for th in self.poolThreads:
                     if not th.isAlive():
-                        self.unidadeControle.add_buffer(cliente)
+                        self.unidadeControle.add_buffer(cliente, th)
                         th.dest = cliente
                         th.arquivo = arquivo
                         th.start()

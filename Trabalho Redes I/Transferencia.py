@@ -1,15 +1,17 @@
 from threading import Thread
 import socket
 from ControleEnvio import ControleEnvio
-
+from time import sleep
 
 class Transferencia(Thread):
-    def __init__(self, unidadecontrole):
+    def __init__(self, unidadecontrole, lock):
         Thread.__init__(self)
         self.dest = None
         self.arquivo = None
         self.unidadecontrole = unidadecontrole
         self.controle = ControleEnvio(self.unidadecontrole)
+        self.caixadeaviso = []
+        self.lock = lock
         
     def run(self):
         """
@@ -18,17 +20,18 @@ class Transferencia(Thread):
         """
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp.bind(('', 0))
-        print('0')
         self.unidadecontrole.add_porto(udp)
-        print('1')
         conteudo = self.leitura_arquivo()
         while conteudo != b'':
             self.controle.sendmsg(conteudo, self.dest, udp, tipomsg=2, usounidadecontrole=True)
             conteudo = self.leitura_arquivo()
         self.fechar_arquivo() # termino de transferencia
+
+        while self.checkavisos() != 1:
+            sleep(5)
+
         self.unidadecontrole.remover_porto(udp)
         udp.close()
-        print('2')
 
     def leitura_arquivo(self):
         """
@@ -43,3 +46,17 @@ class Transferencia(Thread):
         :return:
         """
         return self.arquivo.close()
+
+    def checkavisos(self):
+        """
+        checar as msg da unidade de controle
+        :return:
+        """
+        self.lock.acquire()
+        try:
+            if not self.caixadeaviso:
+                return 0
+            else:
+                return self.caixadeaviso[0]
+        finally:
+            self.lock.release()

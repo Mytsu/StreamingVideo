@@ -77,11 +77,11 @@ class Cliente(object):
             # inserindo primeiro pacote na lista
             self.buffer += data
             mensagem = str(numero_seq)
-            #self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
         if tipo == 2:
             self.buffer += data
             mensagem = str(numero_seq)
-            #self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
         if tipo == 3:
             arquivos = self.buffer.decode('utf-8').split('#')
             for arquivo in arquivos:
