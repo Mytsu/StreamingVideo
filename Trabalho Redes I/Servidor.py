@@ -70,19 +70,14 @@ class Servidor(object):
 
         elif 'get' in data:
             prm = data.split(" ")
-            print(self.diretorio + arquivos[int(prm[1])])
             try:
                 arquivo = open(self.diretorio + arquivos[int(prm[1])], 'rb')
                 for th in self.poolThreads:
                     if not th.isAlive():
-                        print('1')
                         self.unidadeControle.add_buffer(cliente)
-                        print('2')
                         th.dest = cliente
                         th.arquivo = arquivo
-
                         th.start()
-                        print('entrou')
                         break
 
             except ValueError:

@@ -27,14 +27,12 @@ class UnidadeControle(Thread):
         while True:
             if not self.listaPortos:
                 self.lock.acquire()
-                readable = []
-                try:
-                    readable, writable, exceptional = select.select(self.listaPortos, [], [], self.udp.gettimeout())
-                except: # time out
-                    print('Time out')
+                readable, writable, exceptional = select.select(self.listaPortos, [], [], self.udp.gettimeout())
                 self.lock.release()
+
                 for udp in readable:
-                   udp.recvfrom(1024)
+                    msg, cliente = udp.recvfrom(1024)
+                    print(msg)
                 sleep(5)
             else:
                 sleep(5)
@@ -50,7 +48,12 @@ class UnidadeControle(Thread):
         self.listaClientes[cliente][self.ACK].append(valor)
         self.lock.release()
 
-    def add_porto(self, porto):
+    def add_porto(self, udp):
         self.lock.acquire()
-        self.listaPortos.append(porto)
+        self.listaPortos.append(udp)
+        self.lock.release()
+
+    def remover_porto(self, udp):
+        self.lock.acquire()
+        self.listaPortos.remove(udp)
         self.lock.release()

@@ -12,7 +12,7 @@ class Cliente(object):
         self.servidor = ('127.0.1.1', 50000)
         self.controle = ControleEnvio()
         self.udp.settimeout(1)
-        self.buffer = None
+        self.buffer = b''
         self.arquivo = None
 
     def requisita_servidor(self):
@@ -37,6 +37,7 @@ class Cliente(object):
             print('Timeout erro')
             self.requisita_servidor()
 
+        print(mensagem)
         self.checkmsg(mensagem, srvenvio)
         self.requisita_servidor()
 
@@ -69,8 +70,6 @@ class Cliente(object):
         :return:
         """
         if tipo == 0:
-            data = data.decode('utf-8')
-
             self.buffer = self.buffer + data
             self.recebermsg()
 
@@ -78,13 +77,13 @@ class Cliente(object):
             # inserindo primeiro pacote na lista
             self.buffer += data
             mensagem = str(numero_seq)
-            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            #self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
         if tipo == 2:
             self.buffer += data
             mensagem = str(numero_seq)
-            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            #self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
         if tipo == 3:
-            arquivos = self.buffer.split('#')
+            arquivos = self.buffer.decode('utf-8').split('#')
             for arquivo in arquivos:
                 print(arquivo)
 

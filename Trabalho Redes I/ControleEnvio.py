@@ -3,7 +3,7 @@ import math
 
 class ControleEnvio(object):
     def __init__(self, unidadecontrole = None):
-        self.buffersize = 104857600  # 100MB
+        self.buffersize = 8388608  # 100MB
         self.windowsize = 8388608  # 8MB
         self.unidadecontrole = unidadecontrole
 
@@ -17,14 +17,14 @@ class ControleEnvio(object):
             msg = msg.encode('utf-8')
 
         lista_msg = self.fragmenta(msg)
-
+        pacote = ''
         cont = 0
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
-            if (cont == 0) and (tipomsg != 0):
+            if (cont == 0) and (tipomsg != 0) and (tipomsg != 4):
                 pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg=1)
-
-            pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg)
+            else:
+                pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg)
 
             if usounidadecontrole:
                 self.unidadecontrole.add_pacote(cliente, pacote)

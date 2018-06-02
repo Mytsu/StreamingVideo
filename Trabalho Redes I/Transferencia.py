@@ -18,10 +18,17 @@ class Transferencia(Thread):
         """
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp.bind(('', 0))
+        print('0')
         self.unidadecontrole.add_porto(udp)
+        print('1')
         conteudo = self.leitura_arquivo()
         while conteudo != b'':
             self.controle.sendmsg(conteudo, self.dest, udp, tipomsg=2, usounidadecontrole=True)
+            conteudo = self.leitura_arquivo()
+        self.fechar_arquivo() # termino de transferencia
+        self.unidadecontrole.remover_porto(udp)
+        udp.close()
+        print('2')
 
     def leitura_arquivo(self):
         """
@@ -29,3 +36,10 @@ class Transferencia(Thread):
         :return:
         """
         return self.arquivo.read(self.controle.buffersize)
+
+    def fechar_arquivo(self):
+        """
+
+        :return:
+        """
+        return self.arquivo.close()
