@@ -21,6 +21,9 @@ class ControleEnvio(object):
         cont = 0
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
+            if (cont == 0) and (tipomsg != 0):
+                pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg=1)
+
             pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg)
 
             if usounidadecontrole:
@@ -29,7 +32,7 @@ class ControleEnvio(object):
             cont += 1
 
         pacote = self.adiciona_cabecalho(
-                'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg
+                'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg=3
         )
         if usounidadecontrole:
             self.unidadecontrole.add_pacote(cliente, pacote)

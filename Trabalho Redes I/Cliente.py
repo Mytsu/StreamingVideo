@@ -12,7 +12,8 @@ class Cliente(object):
         self.servidor = ('127.0.1.1', 50000)
         self.controle = ControleEnvio()
         self.udp.settimeout(1)
-        self.data = ''
+        self.buffer = None
+        self.arquivo = None
 
     def requisita_servidor(self):
         """
@@ -28,14 +29,16 @@ class Cliente(object):
 
         :return:
         """
+        srvenvio = ''
         mensagem = ''
         try:
-            mensagem = self.udp.recv(1024)
+            mensagem, srvenvio = self.udp.recvfrom(1024)
         except: # time out except
             print('Timeout erro')
             self.requisita_servidor()
-        print(mensagem)
-        self.checkmsg(mensagem)
+
+        self.checkmsg(mensagem, srvenvio)
+        self.requisita_servidor()
 
     def desmonta_pacote(self, msg):
         """
@@ -45,7 +48,7 @@ class Cliente(object):
         """
         return msg[:8], msg[8:]
 
-    def checkmsg(self, msg):
+    def checkmsg(self, msg, srvenvio):
         """
 
         :param msg:
@@ -56,11 +59,9 @@ class Cliente(object):
         numero_seq = int().from_bytes(head[:4], 'big')
         windowsize = int().from_bytes(head[4:7], 'big')
         # check header
-        self.tratamento(data, tipo)
+        self.tratamento(data, tipo, numero_seq, windowsize, srvenvio)
 
-        return data
-
-    def tratamento(self, data, tipo):
+    def tratamento(self, data, tipo, numero_seq, windowsize,  srvenvio):
         """
 
         :param data:
@@ -69,13 +70,23 @@ class Cliente(object):
         """
         if tipo == 0:
             data = data.decode('utf-8')
-            if 'encerramento_lista' not in data:
-                self.data = self.data + data
-                self.recebermsg()
-            else:
-                arquivos = self.data.split('#')
-                for arquivo in arquivos:
-                    print(arquivo)
+
+            self.buffer = self.buffer + data
+            self.recebermsg()
+
+        if tipo == 1: # inicio transferencia de arquivo
+            # inserindo primeiro pacote na lista
+            self.buffer += data
+            mensagem = str(numero_seq)
+            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+        if tipo == 2:
+            self.buffer += data
+            mensagem = str(numero_seq)
+            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+        if tipo == 3:
+            arquivos = self.buffer.split('#')
+            for arquivo in arquivos:
+                print(arquivo)
 
 
 if __name__ == '__main__':

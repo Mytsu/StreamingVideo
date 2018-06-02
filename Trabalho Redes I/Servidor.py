@@ -36,7 +36,6 @@ class Servidor(object):
         self.unidadeControle = UnidadeControle(self.lock)
         self.unidadeControle.start()
 
-
     def build_threads(self):
         """
         Criando a pool de threads do servidor
@@ -71,14 +70,19 @@ class Servidor(object):
 
         elif 'get' in data:
             prm = data.split(" ")
+            print(self.diretorio + arquivos[int(prm[1])])
             try:
                 arquivo = open(self.diretorio + arquivos[int(prm[1])], 'rb')
                 for th in self.poolThreads:
                     if not th.isAlive():
+                        print('1')
                         self.unidadeControle.add_buffer(cliente)
+                        print('2')
                         th.dest = cliente
                         th.arquivo = arquivo
-                        th.run()
+
+                        th.start()
+                        print('entrou')
                         break
 
             except ValueError:
