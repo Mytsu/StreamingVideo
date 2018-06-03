@@ -3,6 +3,7 @@ import socket
 from ControleEnvio import ControleEnvio
 from time import sleep
 
+
 class Transferencia(Thread):
     def __init__(self, unidadecontrole, lock):
         Thread.__init__(self)

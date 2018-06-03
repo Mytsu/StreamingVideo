@@ -1,15 +1,15 @@
 import socket
 from ControleEnvio import ControleEnvio
-
+import sys
 
 class Cliente(object):
-    def __init__(self, ipservidor=socket.gethostbyname(socket.gethostname())):
+    def __init__(self, meuip= socket.gethostbyname(socket.gethostname()), ipservidor=socket.gethostbyname(socket.gethostname())):
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.meuip = socket.gethostbyname(socket.gethostname())
+        self.meuip = meuip
         orig = (self.meuip, 0)
         self.udp.bind(orig)
         self.meuporto = self.udp.getsockname()
-        self.servidor = ('127.0.1.1', 50000)
+        self.servidor = (ipservidor, 50000)
         self.controle = ControleEnvio()
         self.udp.settimeout(1)
         self.buffer = b''
@@ -91,5 +91,9 @@ class Cliente(object):
 
 
 if __name__ == '__main__':
-    cliente = Cliente()
+    if len(sys.argv) >= 3:
+        cliente = Cliente(sys.argv[1], sys.argv[2])
+    else:
+        cliente = Cliente()
+
     cliente.requisita_servidor()

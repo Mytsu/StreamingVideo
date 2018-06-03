@@ -28,6 +28,7 @@ class ControleEnvio(object):
 
             if usounidadecontrole:
                 self.unidadecontrole.add_pacote(cliente, pacote)
+
             udp.sendto(pacote, cliente)
             cont += 1
 

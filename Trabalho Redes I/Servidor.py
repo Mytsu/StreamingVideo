@@ -4,6 +4,8 @@ from ControleEnvio import ControleEnvio
 from UnidadeControle import UnidadeControle
 from threading import Thread, Lock
 from Transferencia import Transferencia
+import sys
+
 
 class Servidor(object):
     def __init__(self, meuip=socket.gethostbyname(socket.gethostname()), diretorio='/streamer', arquivolog= 'meulog.log'):
@@ -103,5 +105,8 @@ class Servidor(object):
 
 
 if __name__ == '__main__':
-    servidor = Servidor()
+    if len(sys.argv) >= 2:
+        servidor = Servidor(sys.argv[1])
+    else:
+        servidor = Servidor()
     servidor.wait()
