@@ -2,13 +2,15 @@ from threading import Thread
 import select
 from time import sleep
 import socket
+from Pacote import Pacote
 
 
 class UnidadeControle(Thread):
     (
         PACOTE,
-        ACK
-    ) = range(2)
+        ACK,
+        TIME
+    ) = range(3)
 
     def __init__(self, lock):
         Thread.__init__(self)
@@ -18,6 +20,7 @@ class UnidadeControle(Thread):
         self.listaPortos = []
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.settimeout(1)
+        self.timeoutpacote = 3
 
     def run(self):
         """
@@ -27,16 +30,22 @@ class UnidadeControle(Thread):
 
         while True:
             if self.listaPortos: # lista dos portos para se analisar os acks
+                print('olhando leitura')
                 self.lock.acquire()
                 readable, writable, exceptional = select.select(self.listaPortos, [], [], self.udp.gettimeout())
                 self.lock.release()
-
                 for udp in readable:
                     msg, cliente = udp.recvfrom(1024) # recebimento do ack
+                    print(msg)
                     self.tratamsg(msg, cliente)
-                sleep(5)
+
+
+                # verifica se algum pacote deu o timeout e libera o pacote do buffer
+                self.verifica_timeout_pacote()
+                # verifica se posso liberar alguma thread
+                self.verifica_liberacao_thread()
             else:
-                sleep(5)
+                sleep(3)
 
     def add_buffer(self, cliente, threferente):
         """
@@ -46,7 +55,7 @@ class UnidadeControle(Thread):
         :return:
         """
         self.lock.acquire()
-        self.listaClientes.update({cliente: ([], [])})
+        self.listaClientes.update({cliente: []})
         self.threadsusadas.update({cliente: threferente})
         self.lock.release()
 
@@ -58,9 +67,9 @@ class UnidadeControle(Thread):
         :param valor: 0 quando ainda nao recebeu o pacote e ack quando receber
         :return:
         """
+
         self.lock.acquire()
-        self.listaClientes[cliente][self.PACOTE].append(pacote)
-        self.listaClientes[cliente][self.ACK].append(valor)
+        self.listaClientes[cliente].append(Pacote(pacote, valor, self.timeoutpacote))
         self.lock.release()
 
     def add_porto(self, udp):
@@ -85,6 +94,7 @@ class UnidadeControle(Thread):
         :param aviso: menssagem para a thread
         :return:
         """
+        print('AVISO PARA THREAD')
         print(aviso)
         th.lock.acquire()
         th.caixadeaviso.append(aviso)
@@ -102,9 +112,16 @@ class UnidadeControle(Thread):
         if tipo != 4:
             return 0
 
-        numero_seq = int(data.encode('utf-8'))
         self.lock.acquire()
-        self.listaClientes[cliente][self.ACK][numero_seq] = 1
+
+        numero_seq = int(data.decode('utf-8'))
+        print(numero_seq)
+        for pacote in self.listaClientes[cliente]:
+            if int().from_bytes(pacote.dados[:4], 'big') == numero_seq:
+                pacote.ack = 1
+                print('liberei alguem')
+                self.listaClientes[cliente].remove(pacote)
+
         self.lock.release()
 
     def desmonta_pacote(self, msg):
@@ -114,3 +131,31 @@ class UnidadeControle(Thread):
         :return:
         """
         return msg[:8], msg[8:]
+
+    def verifica_timeout_pacote(self):
+        """
+
+        :return:
+        """
+        self.lock.acquire()
+        for cliente in self.listaClientes.keys():
+            for pacote in self.listaClientes[cliente]:
+                if pacote.ack == 1:
+                    continue
+                pacote.time -= 1
+                if pacote.time <= 0:
+                    pacote.time = 10
+                    self.udp.sendto(pacote.dados, cliente)
+        self.lock.release()
+
+    def verifica_liberacao_thread(self):
+        marcado = []
+        self.lock.acquire()
+        for cliente in self.listaClientes.keys():
+            if not self.listaClientes[cliente]:
+                self.avisar_thread(self.threadsusadas[cliente], 1)
+                self.threadsusadas.pop(cliente)
+                marcado.append(cliente)
+        for m in marcado:
+            self.listaClientes.pop(m)
+        self.lock.release()

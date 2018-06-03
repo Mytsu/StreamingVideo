@@ -31,12 +31,13 @@ class ControleEnvio(object):
             udp.sendto(pacote, cliente)
             cont += 1
 
-        pacote = self.adiciona_cabecalho(
-                'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg=3
-        )
-        if usounidadecontrole:
-            self.unidadecontrole.add_pacote(cliente, pacote)
-        udp.sendto(pacote, cliente)
+        if tipomsg != 4:
+            pacote = self.adiciona_cabecalho(
+                    'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg=3
+            )
+            if usounidadecontrole:
+                self.unidadecontrole.add_pacote(cliente, pacote)
+            udp.sendto(pacote, cliente)
 
     def fragmenta(self, msg):
         # em bytes

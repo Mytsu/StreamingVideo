@@ -27,8 +27,10 @@ class Transferencia(Thread):
             conteudo = self.leitura_arquivo()
         self.fechar_arquivo() # termino de transferencia
 
+        print('A espera do aviso')
         while self.checkavisos() != 1:
             sleep(5)
+        print('Avisado')
 
         self.unidadecontrole.remover_porto(udp)
         udp.close()

@@ -37,7 +37,7 @@ class Cliente(object):
             print('Timeout erro')
             self.requisita_servidor()
 
-        print(mensagem)
+        print(srvenvio)
         self.checkmsg(mensagem, srvenvio)
         self.requisita_servidor()
 
@@ -78,14 +78,16 @@ class Cliente(object):
             self.buffer += data
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            self.recebermsg()
         if tipo == 2:
             self.buffer += data
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+            self.recebermsg()
         if tipo == 3:
-            arquivos = self.buffer.decode('utf-8').split('#')
-            for arquivo in arquivos:
-                print(arquivo)
+            print(self.buffer)
+            mensagem = str(numero_seq)
+            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
 
 
 if __name__ == '__main__':
