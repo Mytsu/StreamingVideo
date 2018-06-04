@@ -20,7 +20,7 @@ class Transferencia(Thread):
         :return:
         """
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp.bind(('', 0))
+        udp.bind((socket.gethostbyname(socket.gethostname()), 0))
         self.unidadecontrole.add_porto(udp)
         conteudo = self.leitura_arquivo()
         while conteudo != b'':
@@ -31,9 +31,8 @@ class Transferencia(Thread):
         print('A espera do aviso')
         while self.checkavisos() != 1:
             sleep(5)
-        print('Avisado')
 
-        self.unidadecontrole.remover_porto(udp)
+        self.unidadecontrole.remover_cliente(self.checkavisos(), udp)
         udp.close()
 
     def leitura_arquivo(self):
@@ -60,6 +59,6 @@ class Transferencia(Thread):
             if not self.caixadeaviso:
                 return 0
             else:
-                return self.caixadeaviso[0]
+                return self.caixadeaviso.pop(0)
         finally:
             self.lock.release()

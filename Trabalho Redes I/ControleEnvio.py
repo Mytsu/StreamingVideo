@@ -4,7 +4,7 @@ import math
 class ControleEnvio(object):
     def __init__(self, unidadecontrole = None):
         self.buffersize = 8388608  # 100MB
-        self.windowsize = 8388608  # 8MB
+        self.windowsize = 0
         self.unidadecontrole = unidadecontrole
 
     def sendmsg(self, msg, cliente, udp, tipomsg, usounidadecontrole=False):
@@ -17,6 +17,7 @@ class ControleEnvio(object):
             msg = msg.encode('utf-8')
 
         lista_msg = self.fragmenta(msg)
+        self.windowsize = len(lista_msg)
         pacote = ''
         cont = 0
         numero_grande = (2 ** 32) - 1

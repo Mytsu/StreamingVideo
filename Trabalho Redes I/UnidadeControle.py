@@ -29,22 +29,25 @@ class UnidadeControle(Thread):
         """
 
         while True:
+            flag = 0
             if self.listaPortos: # lista dos portos para se analisar os acks
-                print('olhando leitura')
                 self.lock.acquire()
-                readable, writable, exceptional = select.select(self.listaPortos, [], [], self.udp.gettimeout())
+                readable, writable, exceptional = select.select(
+                    self.listaPortos, [], [], self.udp.gettimeout()
+                )
                 self.lock.release()
                 for udp in readable:
                     msg, cliente = udp.recvfrom(1024) # recebimento do ack
-                    print(msg)
                     self.tratamsg(msg, cliente)
-
-
+                    flag = 1
+                if flag:
+                    continue
                 # verifica se algum pacote deu o timeout e libera o pacote do buffer
                 self.verifica_timeout_pacote()
                 # verifica se posso liberar alguma thread
                 self.verifica_liberacao_thread()
             else:
+                print(self.listaPortos)
                 sleep(3)
 
     def add_buffer(self, cliente, threferente):
@@ -54,9 +57,11 @@ class UnidadeControle(Thread):
         :param threferente: thread a tratar do envio
         :return:
         """
+
         self.lock.acquire()
         self.listaClientes.update({cliente: []})
         self.threadsusadas.update({cliente: threferente})
+        print(self.listaClientes)
         self.lock.release()
 
     def add_pacote(self, cliente, pacote, valor=0):
@@ -82,8 +87,10 @@ class UnidadeControle(Thread):
         self.listaPortos.append(udp)
         self.lock.release()
 
-    def remover_porto(self, udp):
+    def remover_cliente(self, cliente, udp):
         self.lock.acquire()
+        self.listaClientes.pop(cliente)
+        self.threadsusadas.pop(cliente)
         self.listaPortos.remove(udp)
         self.lock.release()
 
@@ -94,9 +101,8 @@ class UnidadeControle(Thread):
         :param aviso: menssagem para a thread
         :return:
         """
-        print('AVISO PARA THREAD')
-        print(aviso)
         th.lock.acquire()
+        th.caixadeaviso.append(1)
         th.caixadeaviso.append(aviso)
         th.lock.release()
 
@@ -115,11 +121,9 @@ class UnidadeControle(Thread):
         self.lock.acquire()
 
         numero_seq = int(data.decode('utf-8'))
-        print(numero_seq)
         for pacote in self.listaClientes[cliente]:
             if int().from_bytes(pacote.dados[:4], 'big') == numero_seq:
                 pacote.ack = 1
-                print('liberei alguem')
                 self.listaClientes[cliente].remove(pacote)
 
         self.lock.release()
@@ -143,8 +147,9 @@ class UnidadeControle(Thread):
                 if pacote.ack == 1:
                     continue
                 pacote.time -= 1
-                if pacote.time <= 0:
-                    pacote.time = 10
+                if pacote.time == 0:
+                    print('timeout')
+                    pacote.time = self.timeoutpacote
                     self.udp.sendto(pacote.dados, cliente)
         self.lock.release()
 
@@ -153,9 +158,6 @@ class UnidadeControle(Thread):
         self.lock.acquire()
         for cliente in self.listaClientes.keys():
             if not self.listaClientes[cliente]:
-                self.avisar_thread(self.threadsusadas[cliente], 1)
-                self.threadsusadas.pop(cliente)
-                marcado.append(cliente)
-        for m in marcado:
-            self.listaClientes.pop(m)
+                self.avisar_thread(self.threadsusadas[cliente], cliente)
+
         self.lock.release()

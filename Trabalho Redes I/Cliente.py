@@ -1,6 +1,8 @@
 import socket
 from ControleEnvio import ControleEnvio
 import sys
+import random
+
 
 class Cliente(object):
     def __init__(self, meuip= socket.gethostbyname(socket.gethostname()), ipservidor=socket.gethostbyname(socket.gethostname())):
@@ -14,6 +16,7 @@ class Cliente(object):
         self.udp.settimeout(1)
         self.buffer = b''
         self.arquivo = None
+        self.pacotes_recebidos = []
 
     def requisita_servidor(self):
         """
@@ -39,7 +42,6 @@ class Cliente(object):
 
         print(srvenvio)
         self.checkmsg(mensagem, srvenvio)
-        self.requisita_servidor()
 
     def desmonta_pacote(self, msg):
         """
@@ -75,19 +77,33 @@ class Cliente(object):
 
         if tipo == 1: # inicio transferencia de arquivo
             # inserindo primeiro pacote na lista
+            print(windowsize)
+            self.pacotes_recebidos = bytearray(windowsize+1)
+            print(self.pacotes_recebidos)
             self.buffer += data
+            self.pacotes_recebidos[numero_seq] = 1
             mensagem = str(numero_seq)
+            print(numero_seq)
             self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
             self.recebermsg()
         if tipo == 2:
             self.buffer += data
             mensagem = str(numero_seq)
+            print(numero_seq)
+            self.pacotes_recebidos[numero_seq] = 1
             self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
             self.recebermsg()
         if tipo == 3:
-            print(self.buffer)
+            print(numero_seq)
             mensagem = str(numero_seq)
+            self.pacotes_recebidos[numero_seq] = 1
             self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
+
+        print(self.pacotes_recebidos)
+        if not all(self.pacotes_recebidos):
+            self.recebermsg()
+        else:
+            self.requisita_servidor()
 
 
 if __name__ == '__main__':

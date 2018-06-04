@@ -80,6 +80,8 @@ class Servidor(object):
                         th.dest = cliente
                         th.arquivo = arquivo
                         th.start()
+                        self.poolThreads.remove(th)
+                        self.poolThreads.append(Transferencia(self.unidadeControle, Lock()))
                         break
 
             except ValueError:
