@@ -29,17 +29,19 @@ class Transferencia(Thread):
                 conteudo, self.dest, udp, tipomsg=2, usounidadecontrole=True, seq_inicial=seq
             )
             conteudo = self.leitura_arquivo()
-            sleep(0.5)
+
         self.fechar_arquivo() # termino de transferencia
         self.controle.sendmsg(
             'encerramento_lista'.encode('utf-8'), self.dest, udp, tipomsg=3, usounidadecontrole=True,
             seq_inicial=seq
 
         )
+
         print('A espera do aviso')
         while self.checkavisos() != 1:
+            self.unidadecontrole.verifica_liberacao_thread(self.dest)
             sleep(5)
-
+        print('avisado')
         self.unidadecontrole.remover_cliente(self.checkavisos(), udp)
         udp.close()
 

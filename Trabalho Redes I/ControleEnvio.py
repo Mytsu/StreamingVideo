@@ -4,8 +4,8 @@ from time import sleep
 
 class ControleEnvio(object):
     def __init__(self, unidadecontrole = None):
-        self.buffersize = 90000  # 8 mb
-        self.windowsize = 0
+        self.buffersize = 100000 # 8 mb
+        self.windowsize = 100000
         self.unidadecontrole = unidadecontrole
 
     def sendmsg(self, msg, cliente, udp, tipomsg, usounidadecontrole=False, seq_inicial = 0):
@@ -23,14 +23,16 @@ class ControleEnvio(object):
         cont = seq_inicial
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
-
+            sleep(0.002)
+            if (cont+1)%500 == 0:
+                sleep(1)
             if (cont == 0) and (tipomsg != 0) and (tipomsg != 4):
                 pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg=1)
             else:
                 pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg)
 
             if usounidadecontrole:
-                self.unidadecontrole.add_pacote(cliente, pacote)
+                self.unidadecontrole.add_pacote(cliente, pacote, cont)
 
             udp.sendto(pacote, cliente)
             cont += 1

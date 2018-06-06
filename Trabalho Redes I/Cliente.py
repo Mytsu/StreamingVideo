@@ -30,7 +30,7 @@ class Cliente(object):
         """
 
         mensagem = input('> ')
-
+        self.video.start()
         self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
         self.num_pacotes = 0
 
@@ -102,11 +102,11 @@ class Cliente(object):
         if tipo == 1: # inicio transferencia de arquivo
             # inserindo primeiro pacote na lista
 
-            self.pacotes_recebidos = bytearray(windowsize+1) # verificar se recebi todos os pacotes
+            #self.pacotes_recebidos = bytearray(self.controle.buffersize + 1) # verificar se recebi todos os pacotes
             self.num_pacotes += 1               # auxiliar na verificacao da ordenacao
             self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
             self.arquivo.write(data)
-            self.pacotes_recebidos[numero_seq] = 1
+           # self.pacotes_recebidos[numero_seq] = 1
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
             #video = threading.Thread(target=worker())
@@ -115,54 +115,42 @@ class Cliente(object):
             return 1
         if tipo == 2:
             # se for igual entao esta na ordem
-
+            print("%d %d" %(numero_seq, self.num_pacotes))
             if numero_seq % numero_grande == self.num_pacotes:
                 self.num_pacotes += 1
                 self.arquivo.write(data)
                 self.buffer.sort(key=lambda x: x.numseq)
-                for pct in self.buffer:
-                    if (pct.numseq % numero_grande) == self.num_pacotes: # verifica os proximos estao na ordem
-
-                        self.arquivo.write(pct.dados)
-                        self.num_pacotes += 1
-                        self.buffer.remove(pct)
-                    else: # se nao estiverem
-                        break
+                #self.arquivo.writelines([i.dados for i in self.buffer])
+                self.num_pacotes += len(self.buffer)
+                self.buffer = []
             elif (numero_seq % numero_grande) > self.num_pacotes: # esta fora de ordem
-                self.arquivo.write(pct.dados)
+                self.arquivo.write(data)
                 self.buffer.append(Pacote(data, 0, numero_seq))
 
                 # executar thread que ira rodar o video
 
             mensagem = str(numero_seq)
-            try:
-                self.pacotes_recebidos[numero_seq] = 1
-            except:
-                self.pacotes_recebidos += bytearray(windowsize)
-                self.pacotes_recebidos[numero_seq] = 1
-                if not self.video.isAlive():
-                    self.video.start()
+
+            #self.pacotes_recebidos[numero_seq] = 1
 
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
 
             return 1
         if tipo == 3:
+            print("%d %d" % (numero_seq, self.num_pacotes))
             mensagem = str(numero_seq)
-            self.pacotes_recebidos[numero_seq] = 1
+            #self.pacotes_recebidos[numero_seq] = 1
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
 
         self.buffer.sort(key=lambda x: x.numseq)
-        for pct in self.buffer:
-            if (pct.numseq % numero_grande) == self.num_pacotes:  # verifica os proximos estao na ordem
-                self.arquivo.write(pct.dados)
-                self.num_pacotes += 1
-                #self.buffer.remove(pct)
+        #self.arquivo.writelines([i.dados for i in self.buffer])
+        self.num_pacotes += len(self.buffer)
+        self.buffer = []
 
         if not all(self.pacotes_recebidos):
             return 1
         else:
             self.arquivo.close()
-
             return 1
 
 

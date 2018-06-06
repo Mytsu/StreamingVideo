@@ -20,7 +20,7 @@ class UnidadeControle(Thread):
         self.listaPortos = []
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.settimeout(1)
-        self.timeoutpacote = 1
+        self.timeoutpacote = 10
 
     def run(self):
         """
@@ -41,11 +41,12 @@ class UnidadeControle(Thread):
                     self.tratamsg(msg, cliente)
                     flag = 1
                 if flag:
+                    sleep(1)
                     continue
                 # verifica se algum pacote deu o timeout e libera o pacote do buffer
                 self.verifica_timeout_pacote()
                 # verifica se posso liberar alguma thread
-                self.verifica_liberacao_thread()
+
             else:
                 print(self.listaPortos)
                 sleep(3)
@@ -64,7 +65,7 @@ class UnidadeControle(Thread):
         print(self.listaClientes)
         self.lock.release()
 
-    def add_pacote(self, cliente, pacote, valor=0):
+    def add_pacote(self, cliente, pacote, numseq, valor=0):
         """
         Adiciona um pacote ao buffer de envio
         :param cliente: cliente que foi enciado o pacote
@@ -74,7 +75,7 @@ class UnidadeControle(Thread):
         """
 
         self.lock.acquire()
-        self.listaClientes[cliente].append(Pacote(pacote, self.timeoutpacote, valor) )
+        self.listaClientes[cliente].append(Pacote(pacote, self.timeoutpacote, numseq))
         self.lock.release()
 
     def add_porto(self, udp):
@@ -121,8 +122,9 @@ class UnidadeControle(Thread):
         self.lock.acquire()
 
         numero_seq = int(data.decode('utf-8'))
+
         for pacote in self.listaClientes[cliente]:
-            if int().from_bytes(pacote.dados[:4], 'big') == numero_seq:
+            if pacote.numseq == numero_seq:
                 self.listaClientes[cliente].remove(pacote)
 
         self.lock.release()
@@ -146,14 +148,15 @@ class UnidadeControle(Thread):
                 pacote.time -= 1
                 if pacote.time == 0:
                     print('timeout')
+                    print(pacote.numseq)
                     pacote.time = self.timeoutpacote
                     self.udp.sendto(pacote.dados, cliente)
         self.lock.release()
 
-    def verifica_liberacao_thread(self):
+    def verifica_liberacao_thread(self, cliente):
         self.lock.acquire()
-        for cliente in self.listaClientes.keys():
-            if not self.listaClientes[cliente]:
-                self.avisar_thread(self.threadsusadas[cliente], cliente)
+
+        if not self.listaClientes[cliente]:
+            self.avisar_thread(self.threadsusadas[cliente], cliente)
 
         self.lock.release()
