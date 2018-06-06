@@ -1,13 +1,14 @@
 import math
+from time import sleep
 
 
 class ControleEnvio(object):
     def __init__(self, unidadecontrole = None):
-        self.buffersize = 8388608  # 100MB
+        self.buffersize = 90000  # 8 mb
         self.windowsize = 0
         self.unidadecontrole = unidadecontrole
 
-    def sendmsg(self, msg, cliente, udp, tipomsg, usounidadecontrole=False):
+    def sendmsg(self, msg, cliente, udp, tipomsg, usounidadecontrole=False, seq_inicial = 0):
         """
         formata a msg para envio
         :param msg: msg a ser enviada
@@ -19,9 +20,10 @@ class ControleEnvio(object):
         lista_msg = self.fragmenta(msg)
         self.windowsize = len(lista_msg)
         pacote = ''
-        cont = 0
+        cont = seq_inicial
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
+
             if (cont == 0) and (tipomsg != 0) and (tipomsg != 4):
                 pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg=1)
             else:
@@ -33,13 +35,7 @@ class ControleEnvio(object):
             udp.sendto(pacote, cliente)
             cont += 1
 
-        if tipomsg != 4:
-            pacote = self.adiciona_cabecalho(
-                    'encerramento_lista'.encode('utf-8'), cont % numero_grande, tipomsg=3
-            )
-            if usounidadecontrole:
-                self.unidadecontrole.add_pacote(cliente, pacote)
-            udp.sendto(pacote, cliente)
+        return cont
 
     def fragmenta(self, msg):
         # em bytes

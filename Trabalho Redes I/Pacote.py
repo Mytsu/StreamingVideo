@@ -1,5 +1,5 @@
 class Pacote(object):
-    def __init__(self, dados, ack, timeout):
+    def __init__(self, dados, timeout, numseq):
         self.dados = dados
-        self.ack = ack
         self.time = timeout
+        self.numseq = numseq

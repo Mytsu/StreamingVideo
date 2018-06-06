@@ -20,7 +20,7 @@ class UnidadeControle(Thread):
         self.listaPortos = []
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.settimeout(1)
-        self.timeoutpacote = 3
+        self.timeoutpacote = 1
 
     def run(self):
         """
@@ -74,7 +74,7 @@ class UnidadeControle(Thread):
         """
 
         self.lock.acquire()
-        self.listaClientes[cliente].append(Pacote(pacote, valor, self.timeoutpacote))
+        self.listaClientes[cliente].append(Pacote(pacote, self.timeoutpacote, valor) )
         self.lock.release()
 
     def add_porto(self, udp):
@@ -123,7 +123,6 @@ class UnidadeControle(Thread):
         numero_seq = int(data.decode('utf-8'))
         for pacote in self.listaClientes[cliente]:
             if int().from_bytes(pacote.dados[:4], 'big') == numero_seq:
-                pacote.ack = 1
                 self.listaClientes[cliente].remove(pacote)
 
         self.lock.release()
@@ -144,8 +143,6 @@ class UnidadeControle(Thread):
         self.lock.acquire()
         for cliente in self.listaClientes.keys():
             for pacote in self.listaClientes[cliente]:
-                if pacote.ack == 1:
-                    continue
                 pacote.time -= 1
                 if pacote.time == 0:
                     print('timeout')
@@ -154,7 +151,6 @@ class UnidadeControle(Thread):
         self.lock.release()
 
     def verifica_liberacao_thread(self):
-        marcado = []
         self.lock.acquire()
         for cliente in self.listaClientes.keys():
             if not self.listaClientes[cliente]:

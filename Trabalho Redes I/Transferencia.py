@@ -23,11 +23,19 @@ class Transferencia(Thread):
         udp.bind((socket.gethostbyname(socket.gethostname()), 0))
         self.unidadecontrole.add_porto(udp)
         conteudo = self.leitura_arquivo()
+        seq = 0
         while conteudo != b'':
-            self.controle.sendmsg(conteudo, self.dest, udp, tipomsg=2, usounidadecontrole=True)
+            seq = self.controle.sendmsg(
+                conteudo, self.dest, udp, tipomsg=2, usounidadecontrole=True, seq_inicial=seq
+            )
             conteudo = self.leitura_arquivo()
+            sleep(0.5)
         self.fechar_arquivo() # termino de transferencia
+        self.controle.sendmsg(
+            'encerramento_lista'.encode('utf-8'), self.dest, udp, tipomsg=3, usounidadecontrole=True,
+            seq_inicial=seq
 
+        )
         print('A espera do aviso')
         while self.checkavisos() != 1:
             sleep(5)

@@ -2,7 +2,10 @@ import socket
 from ControleEnvio import ControleEnvio
 import sys
 import random
-
+import os
+import threading
+from Pacote import Pacote
+from Video import Video
 
 class Cliente(object):
     def __init__(self, meuip= socket.gethostbyname(socket.gethostname()), ipservidor=socket.gethostbyname(socket.gethostname())):
@@ -13,19 +16,28 @@ class Cliente(object):
         self.meuporto = self.udp.getsockname()
         self.servidor = (ipservidor, 50000)
         self.controle = ControleEnvio()
-        self.udp.settimeout(1)
-        self.buffer = b''
+        self.udp.settimeout(10)
+        self.buffer = []
         self.arquivo = None
         self.pacotes_recebidos = []
+        self.num_pacotes = 0
+        self.video = Video()
 
     def requisita_servidor(self):
         """
 
         :return:
         """
+
         mensagem = input('> ')
+
         self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
-        self.recebermsg()
+        self.num_pacotes = 0
+
+        msg, srv = self.recebermsg()
+        while msg is not None:
+            self.tratamento(msg, srv)
+            msg, srv = self.recebermsg()
 
     def recebermsg(self):
         """
@@ -37,11 +49,13 @@ class Cliente(object):
         try:
             mensagem, srvenvio = self.udp.recvfrom(1024)
         except: # time out except
-            print('Timeout erro')
-            self.requisita_servidor()
+            print('time error')
+            return None, None
 
-        print(srvenvio)
-        self.checkmsg(mensagem, srvenvio)
+
+
+        return mensagem, srvenvio
+        #self.checkmsg(mensagem, srvenvio)
 
     def desmonta_pacote(self, msg):
         """
@@ -58,52 +72,102 @@ class Cliente(object):
         :return:
         """
         head, data = self.desmonta_pacote(msg)
+
         tipo = int().from_bytes(head[7:8], 'big')
+
         numero_seq = int().from_bytes(head[:4], 'big')
         windowsize = int().from_bytes(head[4:7], 'big')
-        # check header
-        self.tratamento(data, tipo, numero_seq, windowsize, srvenvio)
+        return data, tipo, numero_seq, windowsize
+        #self.tratamento(data, tipo, numero_seq, windowsize, srvenvio)
 
-    def tratamento(self, data, tipo, numero_seq, windowsize,  srvenvio):
+    def tratamento(self, msg, srv):
         """
 
         :param data:
         :param tipo:
         :return:
         """
+        numero_grande = (2 ** 32) - 1
+        data, tipo, numero_seq, windowsize = self.checkmsg(msg, srv)
+
         if tipo == 0:
-            self.buffer = self.buffer + data
-            self.recebermsg()
+            arquivos = (data.decode('utf-8')).split('#')
+            i = 0
+            for arquivo in arquivos:
+                print(str(i) + ': ' + arquivo)
+                i += 1
+
+            return 1
 
         if tipo == 1: # inicio transferencia de arquivo
             # inserindo primeiro pacote na lista
-            print(windowsize)
-            self.pacotes_recebidos = bytearray(windowsize+1)
-            print(self.pacotes_recebidos)
-            self.buffer += data
-            self.pacotes_recebidos[numero_seq] = 1
-            mensagem = str(numero_seq)
-            print(numero_seq)
-            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
-            self.recebermsg()
-        if tipo == 2:
-            self.buffer += data
-            mensagem = str(numero_seq)
-            print(numero_seq)
-            self.pacotes_recebidos[numero_seq] = 1
-            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
-            self.recebermsg()
-        if tipo == 3:
-            print(numero_seq)
-            mensagem = str(numero_seq)
-            self.pacotes_recebidos[numero_seq] = 1
-            self.controle.sendmsg(mensagem, srvenvio, self.udp, tipomsg=4)
 
-        print(self.pacotes_recebidos)
+            self.pacotes_recebidos = bytearray(windowsize+1) # verificar se recebi todos os pacotes
+            self.num_pacotes += 1               # auxiliar na verificacao da ordenacao
+            self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
+            self.arquivo.write(data)
+            self.pacotes_recebidos[numero_seq] = 1
+            mensagem = str(numero_seq)
+            self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
+            #video = threading.Thread(target=worker())
+           # video.start()
+
+            return 1
+        if tipo == 2:
+            # se for igual entao esta na ordem
+
+            if numero_seq % numero_grande == self.num_pacotes:
+                self.num_pacotes += 1
+                self.arquivo.write(data)
+                self.buffer.sort(key=lambda x: x.numseq)
+                for pct in self.buffer:
+                    if (pct.numseq % numero_grande) == self.num_pacotes: # verifica os proximos estao na ordem
+
+                        self.arquivo.write(pct.dados)
+                        self.num_pacotes += 1
+                        self.buffer.remove(pct)
+                    else: # se nao estiverem
+                        break
+            elif (numero_seq % numero_grande) > self.num_pacotes: # esta fora de ordem
+                self.arquivo.write(pct.dados)
+                self.buffer.append(Pacote(data, 0, numero_seq))
+
+                # executar thread que ira rodar o video
+
+            mensagem = str(numero_seq)
+            try:
+                self.pacotes_recebidos[numero_seq] = 1
+            except:
+                self.pacotes_recebidos += bytearray(windowsize)
+                self.pacotes_recebidos[numero_seq] = 1
+                if not self.video.isAlive():
+                    self.video.start()
+
+            self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
+
+            return 1
+        if tipo == 3:
+            mensagem = str(numero_seq)
+            self.pacotes_recebidos[numero_seq] = 1
+            self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
+
+        self.buffer.sort(key=lambda x: x.numseq)
+        for pct in self.buffer:
+            if (pct.numseq % numero_grande) == self.num_pacotes:  # verifica os proximos estao na ordem
+                self.arquivo.write(pct.dados)
+                self.num_pacotes += 1
+                #self.buffer.remove(pct)
+
         if not all(self.pacotes_recebidos):
-            self.recebermsg()
+            return 1
         else:
-            self.requisita_servidor()
+            self.arquivo.close()
+
+            return 1
+
+
+def worker():
+    os.system('mpv video')
 
 
 if __name__ == '__main__':
