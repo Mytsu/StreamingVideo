@@ -20,7 +20,7 @@ class UnidadeControle(Thread):
         self.listaPortos = []
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.settimeout(1)
-        self.timeoutpacote = 10
+        self.timeoutpacote = 3
 
     def run(self):
         """
@@ -29,27 +29,26 @@ class UnidadeControle(Thread):
         """
 
         while True:
-            flag = 0
             if self.listaPortos: # lista dos portos para se analisar os acks
-                self.lock.acquire()
+                #self.lock.acquire()
                 readable, writable, exceptional = select.select(
                     self.listaPortos, [], [], self.udp.gettimeout()
                 )
-                self.lock.release()
+                #self.lock.release()
                 for udp in readable:
-                    msg, cliente = udp.recvfrom(1024) # recebimento do ack
-                    self.tratamsg(msg, cliente)
-                    flag = 1
-                if flag:
-                    sleep(1)
-                    continue
+                    flag = 0
+                    udp.settimeout(1)
+                    while not flag:
+                        try:
+                            flag = 0
+                            msg, cliente = udp.recvfrom(1024) # recebimento do ack
+                            print(self.listaClientes[cliente])
+                            self.tratamsg(msg, cliente)
+                        except:
+                            flag = 1
+
                 # verifica se algum pacote deu o timeout e libera o pacote do buffer
                 self.verifica_timeout_pacote()
-                # verifica se posso liberar alguma thread
-
-            else:
-                print(self.listaPortos)
-                sleep(3)
 
     def add_buffer(self, cliente, threferente):
         """
@@ -125,6 +124,7 @@ class UnidadeControle(Thread):
 
         for pacote in self.listaClientes[cliente]:
             if pacote.numseq == numero_seq:
+                print('removi')
                 self.listaClientes[cliente].remove(pacote)
 
         self.lock.release()

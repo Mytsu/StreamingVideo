@@ -13,6 +13,7 @@ class Servidor(object):
         self.poolThreads = []
         # criar conexao udp
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.meuip = meuip
         HOST = meuip
         PORT = 50000
         # define arquivo de log
@@ -43,7 +44,7 @@ class Servidor(object):
         Criando a pool de threads do servidor
         :return:
         """
-        self.poolThreads = [Transferencia(self.unidadeControle, Lock()) for i in range(10)]
+        self.poolThreads = [Transferencia(self.unidadeControle, Lock(), self.meuip) for i in range(10)]
 
     def wait(self):
         """

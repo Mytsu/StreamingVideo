@@ -23,9 +23,9 @@ class ControleEnvio(object):
         cont = seq_inicial
         numero_grande = (2 ** 32) - 1
         for mensagem in lista_msg:
-            sleep(0.002)
+            sleep(0.003)
             if (cont+1)%500 == 0:
-                sleep(1)
+                sleep(0.5)
             if (cont == 0) and (tipomsg != 0) and (tipomsg != 4):
                 pacote = self.adiciona_cabecalho(mensagem, cont % numero_grande, tipomsg=1)
             else:

@@ -190,3 +190,21 @@ Segue abaixo a descrição das funções implementadas, separadas por arquivo:
 - `verifica_timeout_pacote(self)`: Verifica se o pacote chegou ao seu _timeout_, se o _timeout_ do pacote chegou a 0, reenvia o pacote e reseta o _timeout_;
 
 - `verifica_liberacao_thread(self, cliente)`: Envia um aviso à thread para parar a execução;
+
+
+#Pontos fortes
+Por trabalhar com uma pool threads, o servidor pode responder a mais de um cliente,
+porem deve respeitar um numero maximo de 10 conexoes que e o numero de threads criadas.
+
+O envio e feito de forma sequencial a uma taxa de aproximadamente 1MegaByte por segundo, e os ACKs sao
+recebidas pela unidade de controle controlada por uma outra thread reeviando caso atingir um timeout
+(cada pacote enviado gera um time propio), entao a thread que trata a transferencia do
+arquivo nao sofre interrupcoes na sua transferencia.
+
+#Pontos fracos
+Ainda nao foi inserido uma janela de transferencia, entao ao iniciar uma transferencia se um pacote
+for perdido, mesmo tendo retransmissao, o cliente so recebera o arquivo depois de um certo tempo pois
+havera muitos pacotes a sua frente o que acasionara na interrupção do video.
+
+O limite da velocidade de transferencia é proximo de 1MB, gerando problemas no stremer de videos com a
+resolução muito elevada.
