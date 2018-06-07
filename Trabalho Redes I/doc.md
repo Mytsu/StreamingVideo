@@ -131,7 +131,7 @@ Este aplicativo de streaming de vídeo provê um controle de transmissão de dad
 
   - `self.controle`: Objeto `ControleEnvio()` que recebe o objeto `UnidadeControle()`;
 
-  - `self.caixadeaviso`:
+  - `self.caixadeaviso`: 
 
   - `self.lock`: Trava de _threads_;
 
@@ -139,7 +139,7 @@ Este aplicativo de streaming de vídeo provê um controle de transmissão de dad
 
 - `leitura_arquivo(self)`: Realiza a leitura de _bytes_ no arquivo, lendo a quantidade de _bytes_ do tamanho do _buffer_;
 
-_ `fechar_arquivo(self)`: Fecha o arquivo;
+- `fechar_arquivo(self)`: Fecha o arquivo;
 
 - `checkavisos(self)`: Checa as mensagens da unidade de controle;
 
