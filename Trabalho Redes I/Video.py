@@ -7,4 +7,4 @@ class Video(Thread):
 
     def run(self):
         sleep(2)
-        os.system('mpv  video ')
+        os.system('mpv -')

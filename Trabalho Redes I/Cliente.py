@@ -7,6 +7,7 @@ import threading
 from Pacote import Pacote
 from Video import Video
 
+
 class Cliente(object):
     def __init__(self, meuip= socket.gethostbyname(socket.gethostname()), ipservidor=socket.gethostbyname(socket.gethostname())):
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,10 +30,10 @@ class Cliente(object):
         :return:
         """
         while True:
-            mensagem = input('> ')
+            mensagem = input()
 
             self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
-            self.video = Video()
+            #self.video = Video()
             self.num_pacotes = 0
             msg, srv = self.recebermsg()
             while msg is not None:
@@ -101,11 +102,11 @@ class Cliente(object):
 
         if tipo == 1: # inicio transferencia de arquivo
             # inserindo primeiro pacote na lista
-            self.video.start()
-            #self.pacotes_recebidos = bytearray(self.controle.buffersize + 1) # verificar se recebi todos os pacotes
+                        #self.video.start()
             self.num_pacotes += 1               # auxiliar na verificacao da ordenacao
-            self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
-            self.arquivo.write(data)
+            sys.stdout.buffer.write(data)
+           # self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
+            #self.arquivo.write(data)
            # self.pacotes_recebidos[numero_seq] = 1
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
@@ -114,17 +115,19 @@ class Cliente(object):
             return 1
         if tipo == 2:
             # se for igual entao esta na ordem
-            print("%d %d" %(numero_seq, self.num_pacotes))
+            #print("%d %d" %(numero_seq, self.num_pacotes))
             if numero_seq % numero_grande == self.num_pacotes:
                 self.num_pacotes += 1
-                self.arquivo.write(data)
-                self.buffer.sort(key=lambda x: x.numseq)
-                self.arquivo.writelines([i.dados for i in self.buffer])
-                self.num_pacotes += len(self.buffer)
-                self.buffer = []
+                sys.stdout.buffer.write(data)
+                #self.arquivo.write(data)
+                #self.buffer.sort(key=lambda x: x.numseq)
+                #sys.stdout.buffer.writeline([i.dados for i in self.buffer])
+                #self.arquivo.writelines([i.dados for i in self.buffer])
+                #self.num_pacotes += len(self.buffer)
+                #self.buffer = []
             elif (numero_seq % numero_grande) > self.num_pacotes: # esta fora de ordem
                 self.buffer.append(Pacote(data, 0, numero_seq))
-
+                #sys.stdout.buffer.write(data)
                 # executar thread que ira rodar o video
 
             mensagem = str(numero_seq)
@@ -135,17 +138,18 @@ class Cliente(object):
 
             return 1
         if tipo == 3:
-            print("%d %d" % (numero_seq, self.num_pacotes))
+            #print("%d %d" % (numero_seq, self.num_pacotes))
             mensagem = str(numero_seq)
             #self.pacotes_recebidos[numero_seq] = 1
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
 
-        self.buffer.sort(key=lambda x: x.numseq)
-        self.arquivo.writelines([i.dados for i in self.buffer])
-        self.num_pacotes += len(self.buffer)
-        self.buffer = []
+        #self.buffer.sort(key=lambda x: x.numseq)
+        #sys.stdout.buffer.writeline([i.dados for i in self.buffer])
+        #self.arquivo.writelines([i.dados for i in self.buffer])
+        #self.num_pacotes += len(self.buffer)
+        #self.buffer = []
 
-        self.arquivo.close()
+        #self.arquivo.close()
         return 0
 
 
