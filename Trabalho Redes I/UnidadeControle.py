@@ -158,5 +158,5 @@ class UnidadeControle(Thread):
 
         if not self.listaClientes[cliente]:
             self.avisar_thread(self.threadsusadas[cliente], cliente)
-
+            
         self.lock.release()
