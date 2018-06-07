@@ -16,7 +16,7 @@ class Cliente(object):
         self.meuporto = self.udp.getsockname()
         self.servidor = (ipservidor, 50000)
         self.controle = ControleEnvio()
-        self.udp.settimeout(10)
+        self.udp.settimeout(5)
         self.buffer = []
         self.arquivo = None
         self.pacotes_recebidos = []
@@ -28,16 +28,16 @@ class Cliente(object):
 
         :return:
         """
+        while True:
+            mensagem = input('> ')
 
-        mensagem = input('> ')
-        self.video.start()
-        self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
-        self.num_pacotes = 0
-
-        msg, srv = self.recebermsg()
-        while msg is not None:
-            self.tratamento(msg, srv)
+            self.controle.sendmsg(mensagem, self.servidor, self.udp, tipomsg=2)
+            self.video = Video()
+            self.num_pacotes = 0
             msg, srv = self.recebermsg()
+            while msg is not None:
+                self.tratamento(msg, srv)
+                msg, srv = self.recebermsg()
 
     def recebermsg(self):
         """
@@ -49,7 +49,7 @@ class Cliente(object):
         try:
             mensagem, srvenvio = self.udp.recvfrom(1024)
         except: # time out except
-            print('time error')
+            print('time out')
             return None, None
 
 
@@ -101,7 +101,7 @@ class Cliente(object):
 
         if tipo == 1: # inicio transferencia de arquivo
             # inserindo primeiro pacote na lista
-
+            self.video.start()
             #self.pacotes_recebidos = bytearray(self.controle.buffersize + 1) # verificar se recebi todos os pacotes
             self.num_pacotes += 1               # auxiliar na verificacao da ordenacao
             self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
@@ -109,8 +109,7 @@ class Cliente(object):
            # self.pacotes_recebidos[numero_seq] = 1
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
-            #video = threading.Thread(target=worker())
-           # video.start()
+
 
             return 1
         if tipo == 2:
@@ -120,11 +119,10 @@ class Cliente(object):
                 self.num_pacotes += 1
                 self.arquivo.write(data)
                 self.buffer.sort(key=lambda x: x.numseq)
-                #self.arquivo.writelines([i.dados for i in self.buffer])
+                self.arquivo.writelines([i.dados for i in self.buffer])
                 self.num_pacotes += len(self.buffer)
                 self.buffer = []
             elif (numero_seq % numero_grande) > self.num_pacotes: # esta fora de ordem
-                self.arquivo.write(data)
                 self.buffer.append(Pacote(data, 0, numero_seq))
 
                 # executar thread que ira rodar o video
@@ -143,15 +141,12 @@ class Cliente(object):
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
 
         self.buffer.sort(key=lambda x: x.numseq)
-        #self.arquivo.writelines([i.dados for i in self.buffer])
+        self.arquivo.writelines([i.dados for i in self.buffer])
         self.num_pacotes += len(self.buffer)
         self.buffer = []
 
-        if not all(self.pacotes_recebidos):
-            return 1
-        else:
-            self.arquivo.close()
-            return 1
+        self.arquivo.close()
+        return 0
 
 
 def worker():
@@ -163,5 +158,4 @@ if __name__ == '__main__':
         cliente = Cliente(sys.argv[1], sys.argv[2])
     else:
         cliente = Cliente()
-
     cliente.requisita_servidor()

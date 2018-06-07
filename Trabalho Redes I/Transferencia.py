@@ -5,7 +5,7 @@ from time import sleep
 
 
 class Transferencia(Thread):
-    def __init__(self, unidadecontrole, lock):
+    def __init__(self, unidadecontrole, lock, meuip):
         Thread.__init__(self)
         self.dest = None
         self.arquivo = None
@@ -13,15 +13,17 @@ class Transferencia(Thread):
         self.controle = ControleEnvio(self.unidadecontrole)
         self.caixadeaviso = []
         self.lock = lock
-        
+        self.meuip = meuip
+
     def run(self):
         """
 
         :return:
         """
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp.bind((socket.gethostbyname(socket.gethostname()), 0))
+        udp.bind((self.meuip, 0))
         self.unidadecontrole.add_porto(udp)
+        udp.settimeout(1)
         conteudo = self.leitura_arquivo()
         seq = 0
         while conteudo != b'':
@@ -30,19 +32,26 @@ class Transferencia(Thread):
             )
             conteudo = self.leitura_arquivo()
 
-        self.fechar_arquivo() # termino de transferencia
-        self.controle.sendmsg(
-            'encerramento_lista'.encode('utf-8'), self.dest, udp, tipomsg=3, usounidadecontrole=True,
-            seq_inicial=seq
-
-        )
-
-        print('A espera do aviso')
+        self.fechar_arquivo()
         while self.checkavisos() != 1:
             self.unidadecontrole.verifica_liberacao_thread(self.dest)
-            sleep(5)
-        print('avisado')
+            sleep(1)
         self.unidadecontrole.remover_cliente(self.checkavisos(), udp)
+         # termino de transferencia
+
+        flag = 1
+        while flag:
+            self.controle.sendmsg(
+                'encerramento_lista'.encode('utf-8'), self.dest, udp, tipomsg=3,
+                seq_inicial=seq
+
+            )
+            try:
+                udp.recv(1024) # resposta do ultimo ack
+                flag = 0
+            except:
+                flag = 1
+        print('encerrado')
         udp.close()
 
     def leitura_arquivo(self):
