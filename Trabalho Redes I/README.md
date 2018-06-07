@@ -7,7 +7,11 @@
     Jonathan Arantes
     Vinícius Araújo
 
-Este aplicativo de streaming de vídeo provê um controle de transmissão de dados de modo a não desperdiçar a rede (banda larga, wifi, 4g, etc) do usuário ao transmitir um arquivo de vídeo, enquanto mantém a bufferização do arquivo ao player de vídeo. Segue abaixo a descrição das funções implementadas, separadas por arquivo:
+Este aplicativo de streaming de vídeo provê um controle de transmissão de dados de modo a não desperdiçar a rede (banda larga, wifi, 4g, etc) do usuário ao transmitir um arquivo de vídeo, enquanto mantém a bufferização do arquivo ao player de vídeo.
+
+Até este ponto do projeto, os usos dos datagramas _UDP_ são para transferência de mensagens entre Cliente e Servidor para comunicar a lista de arquivos de vídeo que podem ser transmitidos e o _stream_ de dados partindo do servidor para o cliente.
+
+Segue abaixo a descrição das funções implementadas, separadas por arquivo:
 
 ## Servidor
 
