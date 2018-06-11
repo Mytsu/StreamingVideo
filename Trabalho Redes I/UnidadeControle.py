@@ -20,7 +20,7 @@ class UnidadeControle(Thread):
         self.listaPortos = []
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.settimeout(1)
-        self.timeoutpacote = 3
+        self.timeoutpacote = 1
 
     def run(self):
         """

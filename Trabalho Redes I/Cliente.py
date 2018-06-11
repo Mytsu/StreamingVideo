@@ -101,55 +101,38 @@ class Cliente(object):
             return 1
 
         if tipo == 1: # inicio transferencia de arquivo
-            # inserindo primeiro pacote na lista
-                        #self.video.start()
             self.num_pacotes += 1               # auxiliar na verificacao da ordenacao
             sys.stdout.buffer.write(data)
-           # self.arquivo = open('video', 'wb')  # cria o arquivo mp4, que ira conter o video
-            #self.arquivo.write(data)
-           # self.pacotes_recebidos[numero_seq] = 1
             mensagem = str(numero_seq)
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
-
-
             return 1
+
         if tipo == 2:
             # se for igual entao esta na ordem
             #print("%d %d" %(numero_seq, self.num_pacotes))
             if numero_seq % numero_grande == self.num_pacotes:
                 self.num_pacotes += 1
                 sys.stdout.buffer.write(data)
-                #self.arquivo.write(data)
-                #self.buffer.sort(key=lambda x: x.numseq)
-                #sys.stdout.buffer.writeline([i.dados for i in self.buffer])
-                #self.arquivo.writelines([i.dados for i in self.buffer])
-                #self.num_pacotes += len(self.buffer)
-                #self.buffer = []
+
+                if len(self.buffer) > 0:
+                    self.buffer.sort(key=lambda x: x.numseq)
+                    for pacote in self.buffer:
+                        if pacote.numseq == self.num_pacotes:
+                            sys.stdout.buffer.write(pacote.dados)
+                            self.num_pacotes += 1
+                        else:
+                            break
             elif (numero_seq % numero_grande) > self.num_pacotes: # esta fora de ordem
                 self.buffer.append(Pacote(data, 0, numero_seq))
-                #sys.stdout.buffer.write(data)
-                # executar thread que ira rodar o video
 
             mensagem = str(numero_seq)
-
-            #self.pacotes_recebidos[numero_seq] = 1
-
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
-
             return 1
-        if tipo == 3:
-            #print("%d %d" % (numero_seq, self.num_pacotes))
+
+        if tipo == 3:   # final da transferencia
             mensagem = str(numero_seq)
-            #self.pacotes_recebidos[numero_seq] = 1
             self.controle.sendmsg(mensagem, srv, self.udp, tipomsg=4)
 
-        #self.buffer.sort(key=lambda x: x.numseq)
-        #sys.stdout.buffer.writeline([i.dados for i in self.buffer])
-        #self.arquivo.writelines([i.dados for i in self.buffer])
-        #self.num_pacotes += len(self.buffer)
-        #self.buffer = []
-
-        #self.arquivo.close()
         return 0
 
 
