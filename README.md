@@ -2,8 +2,31 @@
 
 Implementação de um aplicativo que transfere arquivos através de um protocolo modificado baseado em UDP, para streaming de vídeos.
 # Protocolos Utilizados para transferencia
-    • 0 – Transferencia de texto (usado para transferencia da lista de arquivos no diretorio de streamer)
-    • 1 – Inicio da transferencia de arquivos (usado para se criar o arquivo do outro lado da rede)
-    • 2 – Transferencia do arquivo em andamento
-    • 3 – encerramento da transferencia (nos dados vem encerramento lista)
-    • 4 -  ACK e indice
+    - 0 - GET -> `00000000`
+    - 1 - PAUSE -> `00000001`
+    - 2 - SEEK -> `00000010`
+    - 3 - BACK -> `00000011`
+    - 4 - TRANS -> `00000100` 
+    - 5 - ACK -> `00000101`
+    
+Package:
+    - ID = 3 bytes
+    - Type = 1 byte
+    - Dados = PACKAGE_SIZE
+    
+Função do servidor:
+    - Ler arquivo;
+    - Enviar video;
+    - Retransmitir caso _timeout_;
+    - Controle de fluxo (Janela deslizante);
+    - Pause;
+    - Seek e Back;
+    - Canal TCP para comandos de transferência e UDP para transmissão de vídeo;
+    
+Função do cliente:
+    - Pedir arquivo;
+    - Executar mpv;
+    - Enviar ACKs dos pacotes recebidos;
+    - Pause;
+    - Seek e Back por comando do teclado;
+    - Controle de janela;
