@@ -8,7 +8,7 @@ Implementação de um aplicativo que transfere arquivos através de um protocolo
 - 3 - BACK -> `00000011`
 - 4 - TRANS -> `00000100` 
 - 5 - ACK -> `00000101`
-    
+- 6 - PLAY -> `00000110`    
 Package:
 - ID = 3 bytes
 - Type = 1 byte
