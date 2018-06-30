@@ -1,3 +1,5 @@
+import subprocess
+
 class Arquivo(object):
     """
     Classe para tratar os diversos tipos de leitura para o
@@ -16,7 +18,10 @@ class Arquivo(object):
         :param nomedoarquivo: nome do arquivo mpv
         :return: bitrate do arquivo
         """
-        bitrate = 0
+
+        # usa mediainfo para coletar o bitrate do video
+        bitrate = subprocess.Popen(["mediainfo", "--Output='Video;%BitRate%;'", self.__nome], stdout=subprocess.PIPE).communicate()[0]
+
         # verifica a existencia do arquivo
 
         # verifica se arquivo e do formato mp4
