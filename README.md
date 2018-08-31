@@ -1,5 +1,7 @@
 # Projeto de Streaming de Vídeo
 
+[![CircleCI](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master.svg?style=svg)](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master)
+
 Implementação de um aplicativo que transfere arquivos através de um protocolo modificado baseado em UDP, para streaming de vídeos.
 
 ## Protocolos Utilizados para transferencia
