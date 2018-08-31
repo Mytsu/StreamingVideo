@@ -1,6 +1,8 @@
 # Projeto de Streaming de Vídeo
 
-[![CircleCI](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master.svg?style=svg)](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master)
+[![CircleCI](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master.svg?style=svg)](https://circleci.com/gh/Mytsu/StreamingVideo/tree/master) 
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Django.svg?style=flat-square)
+
 
 Implementação de um aplicativo que transfere arquivos através de um protocolo modificado baseado em UDP, para streaming de vídeos.
 
